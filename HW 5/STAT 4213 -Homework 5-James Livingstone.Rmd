@@ -1,0 +1,185 @@
+---
+title: "Chapter 9 Homework"
+author: "James Livingstone"
+date: "December 8, 2022"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+library(tidyverse)
+library(summarytools)
+library(Hmisc)  # for rcorr()
+library(car)    # for vif()
+library(leaps)  # for regsubsets()
+
+banks = read.csv('BANKS.csv')
+titanic = read.csv('titanic.csv')
+
+
+
+```
+
+
+
+# 1.a.
+
+```{r problem 1a}
+titanic %>% 
+  select(age, fare) %>%
+  descr(stats = "common", transpose = T)
+
+
+titanic %>% 
+  select(sex, survived, pclass) %>%
+  freq(stats = "common", transpose = T)
+```
+
+# 1.b.
+```{r problem 1b}
+
+main_effect_model = glm(survived ~ age + fare + pclass + sex, family = binomial,data = titanic)
+summary(main_effect_model)
+
+
+```
+
+
+
+
+
+
+# 1.c.
+```{r problem 1c}
+
+vif(main_effect_model)
+
+```
+There is no collinearity amongst the independent variables; all of the vif values are under 5. 
+ 
+
+
+#1d.
+```{r problem 1d}
+
+titanic2 = titanic %>% 
+  mutate(probs = predict(main_effect_model, type = "response"), 
+         logit = log(probs / (1 - probs)))
+
+# check for linearity of logit vs. quantitative predictors
+par(mfrow = c(1, 3))
+plot(logit ~ age, data = titanic2)
+plot(logit ~ fare, data = titanic2)
+plot(logit ~ pclass, data = titanic2)
+
+
+```
+
+
+
+# 1e.
+```{r problem 1e}
+
+plot(logit ~ log(fare), data = titanic2)
+main_effect_model2 = glm(survived ~ age + log(fare) + pclass + sex, family = binomial,data = titanic)
+
+
+```
+
+#1f
+```{r problem 1f}
+
+#stepwise selection (because we have a qualitative variable with more than 2 categories)
+intercept_only = glm(survived ~ 1, family = binomial, data = titanic)
+step(intercept_only, formula(main_effect_model2))
+
+#stepwise removed log(fare) from the model.
+
+#best subsets
+survived_subs = regsubsets(survived ~ pclass + age + log(fare) + sex, data = titanic, nvmax = 10)
+summary(survived_subs)
+
+par(mfrow = c(1, 4))
+plot(summary(survived_subs)$rss, type = "b")
+plot(summary(survived_subs)$adjr2, type = "b")
+plot(summary(survived_subs)$bic, type = "b")
+plot(summary(survived_subs)$cp, type = "b")
+abline(1, 1, col = "red")
+
+#according to regsubsets 3 variable model is the best; remove log(fare) from the model. 
+
+main_effect_model3 = glm(survived ~ age + pclass + sex, family = binomial,data = titanic)
+summary(main_effect_model3)
+```
+#1g
+```{r problem 1g}
+#significant interactions
+
+model = glm(survived ~ age + pclass + sex + age * pclass, family = binomial,data = titanic)
+summary(model) # not significant
+
+model2 = glm(survived ~ age + pclass + sex + age * sex, family = binomial,data = titanic)
+summary(model2) # significant
+
+model3 = glm(survived ~ age + pclass + sex + sex * pclass, family = binomial,data = titanic)
+summary(model3) # most significant interaction
+
+model4 = glm(survived ~ age + pclass + sex + age * sex + sex * pclass, family = binomial,data = titanic)
+summary(model4) #age:sex not significant when included with sex:pclass
+
+final_model = glm(survived ~ age + pclass + sex + sex * pclass, family = binomial,data = titanic)
+
+```
+#1h
+```{r problem 1h}
+# check influential points
+plot(final_model, which = 5) #no influential points
+
+
+```
+#1i
+```{r problem 1i}
+#probability
+predict(final_model, newdata = data.frame(age = mean(titanic$age), sex = 'male', pclass = c(1:3)), type = "response")
+
+predict(final_model, newdata = data.frame(age = mean(titanic$age), sex = 'female', pclass = c(1:3)), type = "response")
+```
+
+
+
+According to the data output for the probability of males in each of the passenger classes who are of average age, there is a 38% chance of survival for men in first class, 23% chance of survival for men in second class, and 13% chance of survival for men in third class.
+
+According to the data output for the probability of females in each of the passenger classes who are of average age, there is a 98% chance of survival for women in first class, 87% chance of survival in second class, and 41% chance of survival in third class.
+
+#2a
+```{r problem 2a}
+```
+Poisson regression is more appropriate than least squares regression for modeling monthly bank failures because it is able to count the discrete data of bank failures which are small occurrences in fixed amount of times (months).
+
+#2b
+```{r problem 2b}
+banks_model = glm(Failures ~ AdjTA, family = poisson, data = banks)
+summary(banks_model)
+```
+#2c
+```{r problem 2c}
+1 - pchisq(banks_model$deviance, banks_model$df.residual)
+```
+
+There is not enough evidence to conclude that this model is a good fit.
+
+
+#2d
+```{r problem 2d}
+exp(banks_model$coefficients)
+```
+There is a 0.001% decrease in bank failures for every one dollar of adjusted total assets.
+
+#2e
+```{r problem 2e}
+
+stats::predict(banks_model, newdata = data.frame(AdjTA = 15000.00), type = "response")
+
+```
+
+There would be 0.8871576 bank failures during a month with adjusted total assets of $15,000 billion.

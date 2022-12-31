@@ -1,0 +1,93 @@
+---
+title: "Chapter 1 Homework"
+author: "James Livingstone"
+date: "September 13, 2022"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+library(tidyverse)
+library(summarytools)
+rude.csv = read.csv('rude.csv')
+voltage.csv = read.csv('voltage.csv')
+
+
+
+```
+
+
+
+# 1.
+1.72 Comparing voltage readings
+
+a)
+```{r homework1}
+
+
+
+voltage.csv %>%
+  group_by(LOCATION) %>% #control shift m
+  descr(VOLTAGE, stats = "common", transpose = T)
+par(mfrow = c(1, 3))
+hist(voltage.csv$VOLTAGE[voltage.csv$LOCATION == "OLD"], main = "", xlab = "voltage", ylab = "Location OLD")
+boxplot(voltage.csv$VOLTAGE[voltage.csv$LOCATION == "OLD"], main = "", xlab = "voltage", ylab = "Location OLD")
+qqnorm(voltage.csv$VOLTAGE[voltage.csv$LOCATION == "OLD"], main = "", xlab = "voltage", ylab = "Location OLD")
+qqline(voltage.csv$VOLTAGE[voltage.csv$LOCATION == "OLD"], main = "", xlab = "voltage", ylab = "Location OLD")
+
+hist(voltage.csv$VOLTAGE[voltage.csv$LOCATION == "NEW"], main = "", xlab = "voltage", ylab = "Location NEW")
+boxplot(voltage.csv$VOLTAGE[voltage.csv$LOCATION == "NEW"], main = "", xlab = "voltage", ylab = "Location NEW")
+qqnorm(voltage.csv$VOLTAGE[voltage.csv$LOCATION == "NEW"], main = "", xlab = "voltage", ylab = "Location NEW")
+qqline(voltage.csv$VOLTAGE[voltage.csv$LOCATION == "NEW"], main = "", xlab = "voltage", ylab = "Location NEW")
+
+t.test(VOLTAGE ~ LOCATION, data = voltage.csv, conf.level = 0.90)
+
+```
+Distribution Description:
+The distribution of voltages for old locations and new locations appears to be 
+uniform.There is a small amount of skew in the new location but it is not very
+extreme. The sample size is ample and there are not many outliers. We can not prove the data to be non-linear and so we can run a t-test.
+
+Hypothesis Test Conclusion:
+There is enough evidence to conclude that there is a significant difference
+in the mean voltages of old locations and new locations because the confidence interval did not include 0.
+
+Confidence Interval Interpretation:
+We are 90% confident that the difference in the mean voltages of the old 
+locations and new locations is between -0.60 and -0.16 volts.
+
+b)
+The old locations depict a mean voltage that is higher than the mean voltage of the new locations. According to the textbook having a higher mean voltage in a location is more suitable for the manufacturing process, with this in mind it would not be of the best strategy to establish the process locally. 
+
+
+
+
+# 2.
+1.107 Does rudeness really matter in the workplace?
+```{r homework2}
+
+
+
+rude.csv %>%
+  group_by(Condition) %>% #control shift m
+  descr(UsesBrick, stats = "common", transpose = T)
+par(mfrow = c(1, 3))
+hist(rude.csv$UsesBrick[rude.csv$Condition == "Control"], main = "", xlab = "UsesBrick", ylab = "Control")
+boxplot(rude.csv$UsesBrick[rude.csv$Condition == "Control"], main = "", xlab = "UsesBrick", ylab = "Control")
+qqnorm(rude.csv$UsesBrick[rude.csv$Condition == "Control"], main = "", xlab = "UsesBrick", ylab = "Control")
+qqline(rude.csv$UsesBrick[rude.csv$Condition == "Control"], main = "", xlab = "UsesBrick", ylab = "Control")
+
+hist(rude.csv$UsesBrick[rude.csv$Condition == "Rude"], main = "", xlab = "UsesBrick", ylab = "Rude")
+boxplot(rude.csv$UsesBrick[rude.csv$Condition == "Rude"], main = "", xlab = "UsesBrick", ylab = "Rude")
+qqnorm(rude.csv$UsesBrick[rude.csv$Condition == "Rude"], main = "", xlab = "UsesBrick", ylab = "Rude")
+qqline(rude.csv$UsesBrick[rude.csv$Condition == "Rude"], main = "", xlab = "UsesBrick", ylab = "Rude")
+
+t.test(UsesBrick ~ Condition, data = rude.csv, conf.level = 0.99)
+
+
+```
+<b>Distribution Description:</b>
+The distribution of uses of the brick for the control and rude conditions appears to be uniform.There is a small amount of skew in the control condition but it is not very extreme.The sample size is ample and there are not many outliers. We can not prove the data to be non-linear and so we can run a t-test.
+
+Hypothesis Test Conclusion:
+The results of the statistical analysis determined that there is a t-value of 2.81, and a p-value of 0.006, which means we can reject the null hypothesis. This gives us enough evidence to conclude that there is a significant difference in the mean values of the number of uses of the brick between the control group and the rude group. There is sufficient evidence to conclude that the true mean performance level for students in the rudeness condition (8.51) is lower than the true mean performance level for students in the control group (11.81). 

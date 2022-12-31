@@ -1,0 +1,174 @@
+---
+title: "Chapter 2 Homework"
+author: "James Livingstone"
+date: "September 20, 2022"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+library(tidyverse)
+library(summarytools)
+library(Hmisc)
+
+gasturbine = read.csv('GASTURBINE.csv')
+
+
+
+
+```
+
+
+
+# 1.
+Table of Summary Statistics
+
+```{r problem 1}
+
+descr(gasturbine, RPM, stats = "common", transpose = T)
+descr(gasturbine, CPRATIO, stats = "common", transpose = T)
+descr(gasturbine, INLET_TEMP, stats = "common", transpose = T)
+descr(gasturbine, EXH_TEMP, stats = "common", transpose = T)
+descr(gasturbine, AIRFLOW, stats = "common", transpose = T)
+descr(gasturbine, POWER, stats = "common", transpose = T)
+descr(gasturbine, HEATRATE, stats = "common", transpose = T)
+
+```
+
+# 2.
+Scatterplots
+```{r problem 2}
+
+
+
+
+par(mfrow = c(2,3))
+plot(gasturbine$RPM, gasturbine$HEATRATE)
+plot(gasturbine$CPRATIO, gasturbine$HEATRATE)
+plot(gasturbine$INLET_TEMP, gasturbine$HEATRATE)
+plot(gasturbine$EXH_TEMP, gasturbine$HEATRATE)
+plot(gasturbine$AIRFLOW, gasturbine$HEATRATE)
+plot(gasturbine$POWER, gasturbine$HEATRATE)
+
+
+```
+
+
+
+
+It would not be inappropriate to compute a simple linear regression model for predicting HEATRATE from any of the 
+other numerical variables because none of the scatterplots appear to be non-linear
+.
+
+# 3.
+Three Scatterplots
+```{r problem 3}
+
+RPM_model = lm(HEATRATE ~ RPM, data = gasturbine)
+summary(RPM_model)
+CPRATIO_model = lm(HEATRATE ~ CPRATIO, data = gasturbine)
+summary(CPRATIO_model)
+INLET_TEMP_model = lm(HEATRATE ~ INLET_TEMP, data = gasturbine)
+summary(INLET_TEMP_model)
+
+
+
+```
+# 4.
+Assess the Fit
+
+
+
+RPM:
+S = 862,
+CV = 7.8%,
+r= 0.84,
+r^2 = 71.2%,
+t = 12.69, p-value < 0.001
+
+CPRATIO:
+S = 1090,
+CV = 9.9%,
+r= -0.73,
+r^2 = 54.0%,
+t = -8.73, p-value < 0.001
+
+INLET_TEMP:
+S = 963.1,
+CV = 8.7%,
+r= -0.8,
+r^2 = 64.1%,
+t = -10.77, p-value < 0.001
+
+The best model for HEATRATE is RPM vs. HEATRATE model because it has 
+comparatively the smallest S value, the lowest CV value, a level of significance
+with its p-value being < 0.001, and the highest r^2 value. 
+
+HEATRATE = 9470 + 0.1917(RPM)
+
+If the gasturbine is at 0 RPM, we would expect the HEATRATE to be 9470.
+For every 1 RPM increase we would expect a 0.1917 increase in the HEATRATE.
+
+71.2% of the variability in HEATRATE can be explained by a linear relationship
+with the level of RPM. 
+
+There is enough evidence to conclude that the amount of RPM has a significant
+effect on HEATRATE.
+
+
+```{r problem 4}
+
+sigma(RPM_model) / mean(gasturbine$HEATRATE) *100 #CV
+sigma(CPRATIO_model) / mean(gasturbine$HEATRATE) *100 #CV
+sigma(INLET_TEMP_model) / mean(gasturbine$HEATRATE) *100 #CV
+gasturbine %>%
+  select(RPM, HEATRATE) %>%
+  as.matrix() %>%
+  rcorr()
+gasturbine %>%
+  select (CPRATIO, HEATRATE) %>%
+  as.matrix() %>%
+  rcorr()
+gasturbine %>%
+  select(INLET_TEMP, HEATRATE) %>%
+  as.matrix() %>%
+  rcorr()
+
+
+
+
+```
+# 5.
+Prediction Interval
+
+PI: (8884.723, 12356.26)
+
+We are 95% confident that when the gasturbine has 6000 RPM, the HEATRATE is
+between 8884.723 and 12356.26
+
+
+```{r problem 5}
+
+predict(RPM_model, newdata = data.frame(RPM = 6000), 
+        interval = "prediction", level = 0.95)
+
+
+
+```
+# 6.
+Confidence Interval
+
+CI: (10398.76, 10842.22)
+
+We are 95% confident that when the gasturbine has 6000 RPM, the mean HEATRATE is
+between 10398.76 and 10842.22
+
+```{r problem 6}
+
+predict(RPM_model, newdata = data.frame(RPM = 6000), 
+        interval = "confidence", level = 0.95)
+
+
+
+
+```

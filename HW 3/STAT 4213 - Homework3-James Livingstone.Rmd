@@ -1,0 +1,159 @@
+---
+title: "Homework 3"
+author: "James Livingstone"
+date: "10/6/22"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+library(tidyverse)
+library(summarytools)
+
+```
+
+You can type text anywhere before, after, or between code chunks. 
+
+# 1. Summary Statistics
+```{r homework1}
+
+boilers = read_csv("BOILERS.csv")
+boilers %>% 
+  select(Man_HRs, Capacity, Pressure) %>%
+  descr(stats = "common", transpose = T)
+
+```
+
+# 2. Scatterplots
+```{r homework2}
+
+par(mfrow = c(1, 2))
+plot(boilers$Capacity, boilers$Man_HRs)
+plot(boilers$Pressure, boilers$Man_HRs)
+
+```
+
+
+
+
+Both of these plots look appropriate since they are not non-linear.
+
+# 3. First-Order Multiple Regression Model
+```{r homework3}
+
+main_model = lm(Man_HRs ~ Capacity + Pressure, data = boilers)
+summary(main_model)
+
+```
+# 4. Overall Utility
+```{r homework4}
+
+
+```
+
+F = 36.12, p < 0.001
+There is enough evidence to conclude that at least one of Capacity or Pressure 
+is significant for predicting man hours.
+
+# 5. Interpret Ra^2
+```{r homework5}
+
+
+```
+Ra^2 = 0.6674
+
+
+66.74% of the variability in the man hours is explained by a linear relationship 
+with capacity and pressure. 
+
+# 6. Interactions
+```{r homework6}
+
+int_model = lm(Man_HRs ~ Capacity +Pressure + Capacity * Pressure, data = boilers)
+summary(int_model)
+
+
+```
+# 7. Interaction Interpretation
+```{r homework7}
+
+
+```
+
+p = 0.03
+I would include this interaction of capacity * pressure because it is significant.
+
+# 8. Estimation of Slope
+
+
+```{r homework8}
+
+
+#Man_HRs = 3013 + 3.786(250) - 1.529(Pressure) + 0.003439(250)(Pressure)
+
+3013 + 3.786 * 250
+
+```
+```{r homework8 part 2}
+
+#Man_HRs = 3595.5 - (1.529 + 0.003439 * 250 (Pressure))
+#Man_HRs = 3959.5 - 0.66925(Pressure)
+
+-1.529 + 0.003439 * 250
+
+
+
+```
+
+
+Estimated Change in the man hours for a 1 psi increase in pressure for a boiler drum with a capacity of 250,000 pounds per hour is 3959.5 - 0.66925(Pressure) in which B1 = -0.66925.
+
+# 9. Interpretation of Ra^2
+```{r homework9}
+
+
+```
+
+Ra^2 = 0.7033
+70.33% of the variability in the man hours is explained by a linear relationship 
+with capacity, pressure, and capacity * pressure.
+
+# 10.Test For Nested Models
+
+```{r homework10}
+simple_model = lm(Man_HRs ~ Capacity, data = boilers)
+summary(simple_model)
+full_model = lm(Man_HRs ~ Capacity +Pressure + Capacity * Pressure, data = boilers)
+summary(full_model)
+anova(simple_model, full_model, test = "F")
+
+
+```
+F = 2.61, p = 0.089
+There is not enough evidence to conclude that there is a significant difference 
+between the simple_model(capacity) and the full_model(interaction).
+
+# 11. Which Model Fits the best?
+```{r homework11}
+
+
+```
+
+When investing p value the main_model (first-order multiple regression model with both Capacity and Pressure), this model can be eliminated due to a poor significance in its p value of 0.6561.
+
+Though The full_model (containing the interaction between capacity and pressure) and the simple_model(containing only capacity) both have significant p values of less than 0.001, the full_model is the best fit model.
+
+This full_model (interaction model) has the highest Ra^2 value of 70.33% compared to the simple_model with a lesser 67.52%. 
+
+# 12. Prediction Interval 
+
+
+```{r homework12}
+#PI
+predict(full_model, newdata = data.frame(Capacity = 300, Pressure = 750), interval = "prediction", level = 0.95)
+
+
+```
+PI: (715.6349, 6835.692)
+We are 95% confident that when the boiler capacity is 300,000 pounds per hour and the pressure is 750psi,the man hours required is between 
+715.63 and 6835.69 hours. 

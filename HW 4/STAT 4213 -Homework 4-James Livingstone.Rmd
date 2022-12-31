@@ -1,0 +1,166 @@
+---
+title: "Homework 4"
+author: "James Livingstone"
+date: "November 8, 2022"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+library(tidyverse)
+library(summarytools)
+library(Hmisc)  # for rcorr()
+library(car)    # for vif()
+library(leaps)  # for regsubsets()
+
+hprices = read.csv('House_Prices.csv')
+
+
+
+
+```
+
+
+
+# 1.
+```{r problem 1}
+
+hprices %>% 
+  select(LotArea, Age, AgeRemod, BsmtSF, FirstFlrSF, SecondFlrSF, Baths, BedroomAbvGr, Fireplaces, GarageCars, GarageArea, SalePrice) %>%
+  descr(stats = "common", transpose = T)
+
+
+hprices %>% 
+  select(BldgType, CentralAir, Bsmt, SecondFlr ) %>%
+  freq(stats = "common", transpose = T)
+
+```
+
+# 2.
+```{r problem 2}
+
+
+
+
+par(mfrow = c(2,4))
+plot(hprices$LotArea, hprices$SalePrice)
+plot(hprices$Age, hprices$SalePrice)
+plot(hprices$AgeRemod, hprices$SalePrice)
+plot(hprices$BsmtSF, hprices$SalePrice)
+plot(hprices$FirstFlrSF, hprices$SalePrice)
+plot(hprices$SecondFlrSF, hprices$SalePrice)
+plot(hprices$Baths, hprices$SalePrice)
+plot(hprices$BedroomAbvGr, hprices$SalePrice)
+plot(hprices$Fireplaces, hprices$SalePrice)
+plot(hprices$GarageCars, hprices$SalePrice)
+plot(hprices$GarageArea, hprices$SalePrice)
+
+```
+
+
+
+
+
+
+# 3.
+```{r problem 3}
+main_model = lm(SalePrice ~ LotArea + Age + AgeRemod + BsmtSF + FirstFlrSF + SecondFlrSF + Baths + BedroomAbvGr + Fireplaces + GarageCars + GarageArea + BldgType + CentralAir + Bsmt + SecondFlr, data = hprices)
+vif(main_model)
+
+
+
+
+
+```
+GarageCars, GarageArea, BsmtSF, FirstFlrSF, SecondFlrSF, SecondFlr appear to be collinear due to their GVIF values being more than 2.23.  
+
+
+#4.
+
+```{r problem 4}
+
+hprices = hprices%>%
+      mutate(TotalSF = BsmtSF + FirstFlrSF + SecondFlrSF)
+
+main_model = lm(SalePrice ~ LotArea + Age + AgeRemod + TotalSF + Baths + BedroomAbvGr + Fireplaces + GarageCars + GarageArea + BldgType + CentralAir + Bsmt + SecondFlr, data = hprices)
+
+vif(main_model)
+
+
+```
+Yes, there is still evidence of collinearity with GarageCars and GarageArea both having GVIFs above 2.23. This makes sense because the more garage area you have available, the more cars can fit in the garage. 
+
+
+
+# 5.
+```{r problem 5}
+main_model = lm(SalePrice ~ LotArea + Age + AgeRemod + TotalSF + Baths + BedroomAbvGr + Fireplaces + GarageArea + BldgType + CentralAir + Bsmt + SecondFlr, data = hprices) #removed GarageCars
+
+vif(main_model)
+
+
+```
+
+#6
+```{r problem 6}
+
+
+full_model =  lm(SalePrice ~ LotArea + Age + AgeRemod + TotalSF + Baths + BedroomAbvGr + Fireplaces + GarageArea + BldgType + CentralAir + Bsmt + SecondFlr, data = hprices)
+intercept_model = lm(SalePrice ~ 1, data = hprices)
+step(intercept_model, formula(full_model), trace = 0)
+
+```
+#7
+```{r problem 7}
+par(mfrow = c(1, 4))
+residual_model =  lm(SalePrice ~ LotArea + Age + AgeRemod + TotalSF + BedroomAbvGr + GarageArea, data = hprices)
+plot(residual_model)
+
+```
+
+
+
+The plot Residuals vs Fitted is non-linear.
+The plot Normal Q-Q is mostly normal.
+The Scale-Location has heteroscedasticity.
+Residuals vs Leverage has an influential point.
+
+
+#8
+```{r problem 8}
+
+
+transformed_model =  lm(log(SalePrice) ~ LotArea + Age + AgeRemod + TotalSF + Baths + BedroomAbvGr + Fireplaces + GarageArea + BldgType + CentralAir + Bsmt + SecondFlr, data = hprices)
+transformed_intercept_model = lm(log(SalePrice) ~ 1, data = hprices)
+step(transformed_intercept_model, formula(transformed_model), trace = 0)
+
+```
+#9
+```{r problem 9}
+par(mfrow = c(1,4))
+residual_model2 = lm(log(SalePrice) ~ TotalSF + Age + GarageArea + AgeRemod + LotArea + Fireplaces + BldgType + SecondFlr + BedroomAbvGr + CentralAir, data = hprices)
+plot(residual_model2)
+```
+
+
+
+The plot Residuals vs Fitted is linear.
+The plot Normal Q-Q is non-normal.
+The Scale-Location has no heteroscedasticity.
+Residuals vs Leverage has no influential points.
+
+This model fits better than the model in #6 because even though its Q-Q plot is non-normal, the other plots look good with linearity, no heteroscedasticity, and no influential points in contrast to the plots in the model in #6.
+
+#10
+```{r problem 10}
+prediction = predict(residual_model2, newdata = data.frame(BldgType = "OneFamily", Age = 38, AgeRemod = 24, BedroomAbvGr = 3, TotalSF = 2224, GarageArea = 452, CentralAir = "Y", Fireplaces = 1, LotArea = 10254, SecondFlr = "N"), interval = "prediction", level = 0.95)
+exp(prediction)
+```
+The predicted sales price of the home in Ohio in 2010 is 152286 dollars. 
+
+#11
+```{r problem 11}
+
+```
+We are 95% confident that a one-family home, 38 years old, renovated 24 years ago, with 3 above ground bedrooms, a total square footage of 2224, a garage area of 452, central air, 1 fire place, a lot area of 10254, and no second floor will have a prediction sale price of between 115554.7 and 200692.9 dollars. 
+
